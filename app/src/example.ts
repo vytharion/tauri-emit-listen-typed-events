@@ -3,6 +3,18 @@
 // the bindings light up correctly.
 
 import { onAppEvent, onAppEventVariant } from "./listen";
+import { startScan } from "./invoke";
+
+export async function runFullScan(cidr: string): Promise<void> {
+  // Both sides of the wire share `StartScanRequest` / `StartScanResponse`,
+  // so the call below cannot drift from the Rust handler signature
+  // without a typecheck breaking on the next `cargo test`.
+  const { scan_id, estimated_peers } = await startScan({
+    cidr,
+    timeout_ms: 5_000,
+  });
+  console.log(`scan ${scan_id} launched — ~${estimated_peers} peers expected`);
+}
 
 export async function attachScanLogger(): Promise<() => void> {
   const unlisten = await onAppEvent((event) => {
@@ -17,6 +29,10 @@ export async function attachScanLogger(): Promise<() => void> {
     } else if ("ScanFinished" in event) {
       console.log(
         `scan ${event.ScanFinished.scan_id} done — ${event.ScanFinished.total_peers} peers`,
+      );
+    } else if ("ScanFailed" in event) {
+      console.error(
+        `scan ${event.ScanFailed.scan_id} failed: ${event.ScanFailed.reason}`,
       );
     }
   });

@@ -2,8 +2,4 @@
 import type { PeerRecord } from "./PeerRecord";
 import type { ScanId } from "./ScanId";
 
-/**
- * Every event the backend can push to the frontend. Externally tagged so
- * `serde_json` round-trips it as `{"PeerDiscovered": {...}}` etc.
- */
-export type AppEvent = { "ScanStarted": { scan_id: ScanId, } } | { "PeerDiscovered": { scan_id: ScanId, peer: PeerRecord, } } | { "ScanFinished": { scan_id: ScanId, total_peers: number, } };
+export type AppEvent = { "ScanStarted": { scan_id: ScanId, } } | { "PeerDiscovered": { scan_id: ScanId, peer: PeerRecord, } } | { "ScanFinished": { scan_id: ScanId, total_peers: number, } } | { "ScanFailed": { scan_id: ScanId, reason: string, } };
