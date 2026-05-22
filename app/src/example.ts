@@ -2,7 +2,7 @@
 // `app/` to fetch `@tauri-apps/api`, then `bun run typecheck` to confirm
 // the bindings light up correctly.
 
-import { onAppEvent, onAppEventVariant } from "./listen";
+import { composeUnlisten, onAppEvent, onAppEventVariant } from "./listen";
 import { startScan } from "./invoke";
 
 export async function runFullScan(cidr: string): Promise<void> {
@@ -46,4 +46,23 @@ export async function attachOnlyPeerDiscovered(): Promise<() => void> {
   return onAppEventVariant("PeerDiscovered", ({ peer, scan_id }) => {
     console.log(`scan ${scan_id} → peer ${peer.id}`);
   });
+}
+
+/**
+ * Final composition: panel subscribes to start + peers + failure with
+ * separate handlers, returns ONE teardown function.
+ */
+export async function attachPanelHandlers(): Promise<() => void> {
+  const unlisteners = await Promise.all([
+    onAppEventVariant("ScanStarted", ({ scan_id }) => {
+      console.log(`panel: scan ${scan_id} started`);
+    }),
+    onAppEventVariant("PeerDiscovered", ({ peer }) => {
+      console.log(`panel: peer ${peer.id} (${peer.latency_ms}ms)`);
+    }),
+    onAppEventVariant("ScanFailed", ({ scan_id, reason }) => {
+      console.error(`panel: scan ${scan_id} failed — ${reason}`);
+    }),
+  ]);
+  return composeUnlisten(unlisteners);
 }

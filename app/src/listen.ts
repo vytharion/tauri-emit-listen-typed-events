@@ -30,6 +30,12 @@ export async function onAppEvent(
 /**
  * Narrow helper: only call `handler` when the discriminant matches.
  * Useful when one component only cares about a single variant.
+ *
+ * The `as unknown` step is deliberate: serde-tagged unions arrive as
+ * `{ VariantName: payload }`, which TypeScript represents as a discriminated
+ * union, not a `Record`. Casting through `unknown` is the documented way
+ * to reshape between an inferred discriminated union and a homogeneous
+ * record view for indexed access.
  */
 export async function onAppEventVariant<K extends VariantName>(
   variant: K,
@@ -37,9 +43,23 @@ export async function onAppEventVariant<K extends VariantName>(
 ): Promise<UnlistenFn> {
   return onAppEvent((event) => {
     if (variant in event) {
-      handler((event as Record<K, VariantPayload<K>>)[variant]);
+      const indexed = event as unknown as Record<K, VariantPayload<K>>;
+      handler(indexed[variant]);
     }
   });
+}
+
+/**
+ * Compose several variant subscriptions into a single teardown closure.
+ * `useEffect` cleanups want one function, not five, so this lets a React
+ * panel stay focused on the handlers instead of bookkeeping.
+ */
+export function composeUnlisten(unlisteners: UnlistenFn[]): () => void {
+  return () => {
+    for (const fn of unlisteners) {
+      fn();
+    }
+  };
 }
 
 // Helper types so `onAppEventVariant("PeerDiscovered", ...)` produces a
