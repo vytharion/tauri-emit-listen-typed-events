@@ -1,0 +1,28 @@
+# Secrets — NEVER COMMIT
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+credentials.json
+service-account*.json
+# macOS clutter
+.DS_Store
+
+# Rust
+target/
+**/*.rs.bk
+
+# TypeScript / Bun
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.vite/
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# Generated bindings — committed deliberately, but ignore stale copies in tmp paths
+bindings/_tmp/
