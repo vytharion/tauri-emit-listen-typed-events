@@ -1,16 +1,19 @@
 //! Event payloads exchanged between the Rust backend and the TypeScript
-//! frontend. Lesson 1 keeps things deliberately untyped on the TS side —
-//! see lesson 2 for the codegen bridge.
+//! frontend. Lesson 2 wires ts-rs so `cargo test` emits `bindings/*.ts`
+//! at the workspace root (driven by `TS_RS_EXPORT_DIR` in `.cargo/config.toml`).
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Identifier for an in-flight peer scan. Newtype so it cannot be confused
 /// with arbitrary `u64`s elsewhere in the codebase.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct ScanId(pub u64);
 
 /// One peer discovered during a network scan.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct PeerRecord {
     pub id: String,
     pub address: String,
@@ -19,7 +22,8 @@ pub struct PeerRecord {
 
 /// Every event the backend can push to the frontend. Externally tagged so
 /// `serde_json` round-trips it as `{"PeerDiscovered": {...}}` etc.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub enum AppEvent {
     ScanStarted { scan_id: ScanId },
     PeerDiscovered { scan_id: ScanId, peer: PeerRecord },
